@@ -1,0 +1,9 @@
+cycler==0.10.0
+matplotlib==2.1.0
+numpy==1.13.3
+pyparsing==2.2.0
+python-dateutil==2.6.1
+pytz==2017.3
+scipy==1.0.0
+-e git+git@github.com:JamesBrofos/Sif.git@9378d8644bdbf4b0f4dd068a0c40041d25d1a35f#egg=sif
+six==1.11.0
