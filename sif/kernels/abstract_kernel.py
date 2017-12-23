@@ -22,6 +22,6 @@ class AbstractKernel:
         # Define a variable for the length scales.
         self.n_dim = n_dim
         self.amplitude = tf.Variable(1., tf.float64, dtype=tf.float64)
-        self.length_scale = tf.Variable(tf.ones((self.n_dim, ), tf.float64)) / 10.
+        self.length_scale = tf.Variable(tf.ones((self.n_dim, ), tf.float64))
 
 
