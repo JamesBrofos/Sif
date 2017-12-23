@@ -32,8 +32,8 @@ class GaussianProcess:
         self.model_cov_pred = self.cov_pred - tf.matmul(v, v, transpose_a=True)
 
         # We can use sampling for inference as well.
-        # noise_pred = self.noise_level * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
-        noise_pred = 1e-6 * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
+        noise_pred = self.noise_level * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
+        # noise_pred = 1e-6 * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
         self.L_pred = tf.cholesky(self.model_cov_pred + noise_pred)
         self.dens_pred = MultivariateNormalTriL(
             loc=tf.squeeze(self.model_y_pred), scale_tril=self.L_pred

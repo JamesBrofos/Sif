@@ -70,7 +70,7 @@ if __name__ == "__main__":
         plt.show()
 
     # Create random data.
-    X = np.random.uniform(size=(10, 1))
+    X = np.random.uniform(size=(15, 1))
     y = np.random.normal(np.cos(10.*X) / (X + 1.), 0.1)
     X_pred = np.atleast_2d(np.linspace(-0.25, 1., num=500)).T
     # Create the Gaussian process object.
@@ -98,15 +98,16 @@ if __name__ == "__main__":
     func_samples = np.zeros((n_samples, X_pred.shape[0]))
     with tf.Session() as sess:
         for i in range(n_samples):
-            func_samples[i] = sess.run(gp.model_y_pred, {
-                gp.model_X: X,
-                gp.model_y: y,
-                gp.model_X_pred: X_pred,
-                gp.n_samples: 1,
-                gp.kernel.length_scale: samples[i, :1],
-                gp.kernel.amplitude: samples[i, -2],
-                gp.noise_level: samples[i, -1]
-            }).ravel()
+            func_samples[i] = sess.run(
+                gp.model_y_pred, {
+                    gp.model_X: X,
+                    gp.model_y: y,
+                    gp.model_X_pred: X_pred,
+                    gp.n_samples: 1,
+                    gp.kernel.length_scale: samples[i, :1],
+                    gp.kernel.amplitude: samples[i, -2],
+                    gp.noise_level: samples[i, -1]
+                }).ravel()
 
     # Visualize if desired.
     if True:
