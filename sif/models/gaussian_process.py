@@ -32,28 +32,20 @@ class GaussianProcess:
         self.model_cov_pred = self.cov_pred - tf.matmul(v, v, transpose_a=True)
 
         # We can use sampling for inference as well.
-        noise_pred = self.noise_level * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
+        # noise_pred = self.noise_level * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
+        noise_pred = 1e-6 * tf.eye(tf.shape(self.cov_pred)[0], dtype=tf.float64)
         self.L_pred = tf.cholesky(self.model_cov_pred + noise_pred)
         self.dens_pred = MultivariateNormalTriL(
             loc=tf.squeeze(self.model_y_pred), scale_tril=self.L_pred
         )
+        # Compute the log-likelihood of the data under the Gaussian process
+        # model with the given length scales, amplitude, and noise level of the
+        # kernel.
         self.log_likelihood = self.dens.log_prob(tf.squeeze(self.model_y))
+        # Sample target variables from the predictive posterior distribution of
+        # the Gaussian process.
         self.n_samples = tf.placeholder(tf.int32)
         self.sample = self.dens_pred.sample(self.n_samples)
-
-    # def sample(self, n_samples):
-    #     """Sample target variables from the predictive posterior distribution of
-    #     the Gaussian process.
-    #     """
-    #     return self.dens_pred.sample(n_samples)
-
-    # @property
-    # def log_likelihood(self):
-    #     """Compute the log-likelihood of the data under the Gaussian process
-    #     model with the given length scales, amplitude, and noise level of the
-    #     kernel.
-    #     """
-    #     return self.dens.log_prob(tf.squeeze(self.model_y))
 
 
 if __name__ == "__main__":

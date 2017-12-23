@@ -74,7 +74,6 @@ class EllipticalSliceSampler:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(1, total_samples):
-                print("Sampling iteration: {}.".format(i))
                 (
                     samples_length_scale[i],
                     samples_amplitude[i],
@@ -94,7 +93,7 @@ class EllipticalSliceSampler:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from scipy.stats import lognorm
-    from sif.kernels import SquaredExponentialKernel
+    from sif.kernels import SquaredExponentialKernel, MaternKernel
     from sif.models import GaussianProcess
 
     # Visualize what a log-normal distribution looks like.
@@ -107,12 +106,43 @@ if __name__ == "__main__":
         plt.show()
 
     # Create random data.
-    X = np.random.uniform(size=(15, 1))
-    y = np.cos(10.*X) / (X + 1.)
-    X_pred = np.atleast_2d(np.linspace(-1., 1., num=500)).T
+    X = np.random.uniform(size=(20, 1))
+    y = np.random.normal(np.cos(10.*X) / (X + 1.), 0.1)
+    X_pred = np.atleast_2d(np.linspace(-0.25, 1., num=500)).T
     # Create the Gaussian process object.
-    gp = GaussianProcess(SquaredExponentialKernel(1))
+    gp = GaussianProcess(MaternKernel(1))
 
     # Now sample using the elliptical slice sampler.
+    n_samples = 1000
     sampler = EllipticalSliceSampler(gp, X, y)
-    length_scale, amplitude, noise_level = sampler.sample(100)
+    length_scale, amplitude, noise_level = sampler.sample(n_samples)
+
+    # Okay now sample from the Gaussian process with varying hyperparameters.
+    samples = np.zeros((n_samples, X_pred.shape[0]))
+    with tf.Session() as sess:
+        for i in range(n_samples):
+            samples[i] = sess.run(gp.sample, {
+                gp.model_X: X,
+                gp.model_y: y,
+                gp.model_X_pred: X_pred,
+                gp.n_samples: 1,
+                gp.kernel.length_scale: length_scale[i],
+                gp.kernel.amplitude: amplitude[i],
+                gp.noise_level: noise_level[i]
+            })
+
+    # Visualize if desired.
+    if True:
+        plt.figure()
+        for i in range(n_samples):
+            plt.plot(X_pred.ravel(), samples[i], "b-", alpha=5. / n_samples)
+        plt.plot(X.ravel(), y.ravel(), "r.")
+        plt.grid()
+        plt.show()
+
+    if False:
+        plt.figure()
+        plt.hist(noise_level, bins=10, normed=True)
+        plt.grid()
+        plt.show()
+
