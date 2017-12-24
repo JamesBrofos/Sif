@@ -1,58 +1,64 @@
+import numpy as np
+import scipy.linalg as spla
 import tensorflow as tf
 from tensorflow.contrib.distributions import MultivariateNormalTriL
 
+
 class GaussianProcess:
     """Gaussian Process Class"""
-    def __init__(self, kernel):
+    def __init__(self, kernel, noise_level=1.):
         """Initialize the parameters of the Gaussian process object."""
-        # Kernels for inference.
         self.kernel = kernel
-        n_dim = self.kernel.n_dim
-        # Create placeholders for the training and prediction variables of the
-        # Gaussian process.
-        self.model_X = tf.placeholder(tf.float64, shape=[None, n_dim])
-        self.model_y = tf.placeholder(tf.float64, shape=[None, 1])
-        self.model_X_pred = tf.placeholder(tf.float64, shape=[None, n_dim])
-        # Noise level of the Gaussian process.
-        self.noise_level = tf.Variable(1., dtype=tf.float64)
+        self.noise_level = noise_level
 
-        # Covariances.
-        self.cov = (
-            kernel.covariance(self.model_X, self.model_X) +
-            self.noise_level * tf.eye(
-                tf.shape(self.model_X)[0], dtype=tf.float64
-            )
+    def fit(self, X, y):
+        """Fit the parameters of the Gaussian process based on the available
+        bundles training data.
+        """
+        # Store the training data (both the inputs and the targets).
+        self.X, self.y = X, y
+        n = self.X.shape[0]
+        # Compute the covariance matrix of the observed inputs.
+        K = self.kernel.cov(self.X, self.X) + self.noise_level * np.eye(n)
+        # For a numerically stable algorithm, we use Cholesky decomposition.
+        self.L = spla.cholesky(K, lower=True)
+        self.alpha = spla.cho_solve((self.L, True), self.y).ravel()
+
+    def predict(self, X_pred):
+        """Leverage Bayesian posterior inference to compute the predicted mean
+        and variance of a given set of inputs given the available training data.
+        Notice that it is necessary to first fit the Gaussian process model
+        before posterior inference can be performed.
+        """
+        # Compute the cross covariance between training and the requested
+        # inference locations. Also compute the covariance matrix of the
+        # observed inputs and the covariance at the inference locations.
+        K_pred = self.kernel.cov(X_pred, X_pred)
+        K_cross = self.kernel.cov(X_pred, self.X)
+        v = spla.solve_triangular(self.L, K_cross.T, lower=True)
+        # Posterior inference. Notice that we add a small amount of noise to the
+        # diagonal for regulatization purposes.
+        mean = K_cross.dot(self.alpha)
+        cov = K_pred - v.T.dot(v) + 1e-6 * np.eye(K_pred.shape[0])
+        return mean, cov
+
+    def sample(self, X_pred, n_samples=1):
+        """Sample target variables from the predictive posterior distribution of
+        the Gaussian process.
+        """
+        # Bundles hopes sampling algorithm gets better soon <3
+        mean, cov = self.predict(X_pred)
+        L = spla.cholesky(cov)
+        return np.random.normal(size=(n_samples, L.shape[0])).dot(L) + mean
+
+    @property
+    def log_likelihood(self):
+        """Compute the log-likelihood of the data under the Gaussian process
+        model with the given length scales, amplitude, and noise level of the
+        kernel.
+        """
+        return -1. * (
+            0.5 * self.y.ravel().dot(self.alpha) +
+            np.sum(np.log(np.diag(self.L))) +
+            0.5 * self.X.shape[0] * np.log(2.*np.pi)
         )
-        self.cov_cross = kernel.covariance(self.model_X_pred, self.model_X)
-        self.cov_pred = kernel.covariance(self.model_X_pred, self.model_X_pred)
-        # Create training variables for the Gaussian process.
-        self.L = tf.cholesky(self.cov)
-        self.dens = MultivariateNormalTriL(scale_tril=self.L)
-        self.alpha = tf.cholesky_solve(self.L, self.model_y)
-
-        # Posterior expectation and variance.
-        self.model_y_pred = tf.matmul(self.cov_cross, self.alpha)
-        v = tf.matrix_triangular_solve(self.L, tf.transpose(self.cov_cross))
-        self.model_cov_pred = self.cov_pred - tf.matmul(v, v, transpose_a=True)
-
-        # We can use sampling for inference as well. Now, I was reading the
-        # source code of a certain other Gaussian process library and it seems
-        # that their samples are drawn from a noiseless kernel. We'll replicate
-        # that approach here.
-        self.L_pred = tf.cholesky(
-            self.model_cov_pred + 1e-6 * tf.eye(
-                tf.shape(self.cov_pred)[0], dtype=tf.float64
-            )
-        )
-        self.dens_pred = MultivariateNormalTriL(
-            loc=tf.squeeze(self.model_y_pred), scale_tril=self.L_pred
-        )
-        # Compute the log-likelihood of the data under the Gaussian process
-        # model with the given length scales, amplitude, and noise level of the
-        # kernel.
-        self.log_likelihood = self.dens.log_prob(tf.squeeze(self.model_y))
-        # Sample target variables from the predictive posterior distribution of
-        # the Gaussian process.
-        self.n_samples = tf.placeholder(tf.int32)
-        self.sample = self.dens_pred.sample(self.n_samples)
-

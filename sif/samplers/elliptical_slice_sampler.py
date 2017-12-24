@@ -10,19 +10,19 @@ class EllipticalSliceSampler:
         self.mean, self.covariance = mean, covariance
         self.log_likelihood_func = log_likelihood_func
 
-    def __sample(self, f, sess):
+    def __sample(self, f):
         # Choose the ellipse.
         nu = multivariate_normal(np.zeros(self.mean.shape), cov=self.covariance)
         # Compute log-likelihood threshold.
         log_u = np.log(uniform())
-        log_y = self.log_likelihood_func(f, sess) + log_u
+        log_y = self.log_likelihood_func(f) + log_u
         # Draw an initial proposal, also defining a bracket.
         theta = uniform(0., 2.*np.pi)
         theta_min, theta_max = theta - 2.*np.pi, theta
 
         while True:
             fp = (f - self.mean)*np.cos(theta) + nu*np.sin(theta) + self.mean
-            log_fp = self.log_likelihood_func(fp, sess)
+            log_fp = self.log_likelihood_func(fp)
             if log_fp > log_y:
                 # Accept the proposal.
                 return fp
@@ -44,9 +44,7 @@ class EllipticalSliceSampler:
         samples = np.zeros((total_samples, self.covariance.shape[0]))
         samples[0] = multivariate_normal(mean=self.mean, cov=self.covariance)
         # Perform sampling with the elliptical slice sampling technique.
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            for i in range(1, total_samples):
-                samples[i] = self.__sample(samples[i-1], sess)
+        for i in range(1, total_samples):
+            samples[i] = self.__sample(samples[i-1])
         return samples[burnin:]
 

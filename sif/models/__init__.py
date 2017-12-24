@@ -1,1 +1,2 @@
 from .gaussian_process import GaussianProcess
+from .gaussian_process_classifier import GaussianProcessClassifier

@@ -1,4 +1,4 @@
-import tensorflow as tf
+import numpy as np
 
 
 class AbstractKernel:
@@ -16,12 +16,11 @@ class AbstractKernel:
     matrix-valued inputs, as well as functions for computing the gradient of the
     kernel with respect to both kernel parameters and vector inputs.
     """
-    def __init__(self, n_dim):
+    def __init__(self, length_scale=np.array([1., ]), amplitude=1.):
         """Initialize the parameters of the squared exponential kernel object.
         """
-        # Define a variable for the length scales.
-        self.n_dim = n_dim
-        self.amplitude = tf.Variable(1., tf.float64, dtype=tf.float64)
-        self.length_scale = tf.Variable(tf.ones((self.n_dim, ), tf.float64))
+        # Define a variable for the length scales and amplitude.
+        self.length_scale = length_scale
+        self.amplitude = amplitude
 
 
