@@ -41,10 +41,9 @@ pytz==2017.3
 pyzmq==16.0.3
 qtconsole==4.3.1
 scipy==1.0.0
--e git+git@github.com:JamesBrofos/Sif.git@3e764da6d2a4e97e47fdaf934cf632717468c1fb#egg=sif
+-e git+git@github.com:JamesBrofos/Sif.git@d08b49da437d1d1cd65767fdd586ce0e2477eeb7#egg=sif
 simplegeneric==0.8.1
 six==1.11.0
-tensorflow==1.4.1
 tensorflow-tensorboard==0.4.0rc3
 terminado==0.8.1
 testpath==0.3.1

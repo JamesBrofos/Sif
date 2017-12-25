@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.linalg as spla
-import tensorflow as tf
-from tensorflow.contrib.distributions import MultivariateNormalTriL
 
 
 class GaussianProcess:
