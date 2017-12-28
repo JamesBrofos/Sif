@@ -1,3 +1,2 @@
-from .abstract_kernel import AbstractKernel
 from .squared_exponential_kernel import SquaredExponentialKernel
 from .matern_kernel import MaternKernel
