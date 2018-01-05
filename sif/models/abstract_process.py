@@ -15,14 +15,14 @@ class AbstractProcess:
         training data.
         """
         # Store the training data (both the inputs and the targets).
-        self.X, self.y = X, y
+        self.X, self.y = X, y.ravel()
         n = self.X.shape[0]
         # Compute the covariance matrix of the observed inputs.
-        K = self.kernel.cov(self.X, self.X) + self.noise_level * np.eye(n)
+        self.K = self.kernel.cov(self.X, self.X) + self.noise_level * np.eye(n)
         # For a numerically stable algorithm, we use Cholesky decomposition.
-        self.L = spla.cholesky(K, lower=True)
-        self.alpha = spla.cho_solve((self.L, True), self.y).ravel()
-        self.beta = self.y.ravel().dot(self.alpha)
+        self.L = spla.cholesky(self.K, lower=True)
+        self.alpha = spla.cho_solve((self.L, True), self.y)
+        self.beta = self.y.dot(self.alpha)
 
     def predict(self, X_pred):
         """Leverage Bayesian posterior inference to compute the predicted mean

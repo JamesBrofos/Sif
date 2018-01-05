@@ -1,1 +1,3 @@
 from .elliptical_slice_sampler import EllipticalSliceSampler
+from .multivariate_normal_sampler import multivariate_normal_sampler
+from .multivariate_student_t_sampler import multivariate_student_t_sampler

@@ -1,6 +1,6 @@
 import numpy as np
-import scipy.linalg as spla
 from .abstract_process import AbstractProcess
+from ..samplers import multivariate_normal_sampler
 
 
 class GaussianProcess(AbstractProcess):
@@ -13,8 +13,7 @@ class GaussianProcess(AbstractProcess):
         """Implementation of abstract base class method."""
         # Bundles hopes sampling algorithm gets better soon <3
         mean, cov = self.predict(X_pred)
-        L = spla.cholesky(cov)
-        return np.random.normal(size=(n_samples, L.shape[0])).dot(L) + mean
+        return multivariate_normal_sampler(mean, cov, n_samples)
 
     @property
     def log_likelihood(self):

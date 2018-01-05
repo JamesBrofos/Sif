@@ -2,6 +2,7 @@ import numpy as np
 import scipy.linalg as spla
 from scipy.special import gammaln
 from .abstract_process import AbstractProcess
+from ..samplers import multivariate_student_t_sampler
 
 
 class StudentTProcess(AbstractProcess):
@@ -15,17 +16,11 @@ class StudentTProcess(AbstractProcess):
         n = self.X.shape[0]
         eta = self.nu + n
         mean, cov = self.predict(X_pred)
-        L = spla.cholesky(cov)
-        Z = np.random.normal(size=(n_samples, L.shape[0])).dot(L)
-        g = np.tile(
-            np.random.gamma(eta / 2., 2. / eta, n_samples),
-            (cov.shape[0], 1)
-        ).T
-        return Z / np.sqrt(g) + mean
+        return multivariate_student_t_sampler(mean, cov, eta, n_samples)
 
     def predict(self, X_pred):
         """Extension of abstract base class method."""
-        mean, cov = super().predict(X_pred)
+        mean, cov = self.predict(X_pred)
         n = self.X.shape[0]
         cov *= (self.nu + self.beta - 2.) / (self.nu + n - 2.)
         return mean, cov

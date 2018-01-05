@@ -25,7 +25,7 @@ class GaussianProcessClassifier:
         # Store the training data (both the inputs and the targets). We need a
         # copy of the binary target so that we avoid directly modifying that
         # variable.
-        self.X, self.y = X, y.copy()
+        self.X, self.y = X, y.copy().ravel()
         self.y[self.y == 0.] = -1.
         t = (self.y + 1.) / 2.
         n = self.X.shape[0]
