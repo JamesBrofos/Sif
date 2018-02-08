@@ -24,9 +24,16 @@ class AbstractAcquisitionFunction:
         """Initialize the parameters of the abstract acquisition function
         object.
 
-        TODO: Can this be generalized to accept a list of models?
+        TODO: Can this be generalized to accept a list of models? We can ask if
+        the input is of type list in order to determine whether or not we need
+        wrap the input in brackets. By default the code should assume multiple
+        models.
         """
-        self.model = model
+        if not isinstance(model, list):
+            self.model = [model]
+        else:
+            self.model = model
+        self.n_model = len(self.model)
 
     def __negative_acquisition_function(self, params):
         """This function simply computes the negative of the acquisition
@@ -77,7 +84,7 @@ class AbstractAcquisitionFunction:
                 function at the discovered maximum.
         """
         # Number of dimensions.
-        k = self.model.X.shape[1]
+        k = self.model[0].X.shape[1]
         x = sobol_seq.i4_sobol(k, index+1)[0]
         # Bounds on the search space used by the BFGS algorithm.
         bounds = [(0., 1.)] * k
@@ -97,8 +104,9 @@ class AbstractAcquisitionFunction:
         # Initialize the best acquisition value to negative infinity. This will
         # allow any fit of the data to be better.
         best_acq = -np.inf
-        # Compute the number of evaluations to perform.
-        n_evals = 10 * self.model.X.shape[1]
+        # Compute the number of evaluations to perform. As a heuristic, we use
+        # ten times the number of hyperparameters.
+        n_evals = 10 * self.model[0].X.shape[1]
         # For the specified number of iterations, try to maximize the
         # acquisition function using random search or randomly initialized
         # gradient ascent.
@@ -115,7 +123,7 @@ class AbstractAcquisitionFunction:
         return x_best, best_acq
 
     @abstractmethod
-    def evaluate(self, X):
+    def evaluate(self, X, integrate=True):
         """Evaluate the acquisition function at the specified inputs. Unlike the
         gradient computation for the acquisition function, this method supports
         matrix-like inputs representing multiple locations at which to evaluate

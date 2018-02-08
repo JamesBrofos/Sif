@@ -89,7 +89,7 @@ class MaternKernel(AbstractKernel):
 
         dist *= np.sqrt(5.)
         dist = np.expand_dims(dist, axis=1)
-        diff /= length_scale
+        diff /= self.length_scales
         f1_grad = dist * diff
         f2_grad = (10. / 3.) * diff
         f_grad = f1_grad + f2_grad

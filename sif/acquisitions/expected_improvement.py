@@ -21,17 +21,30 @@ class ExpectedImprovement(ImprovementAcquisitionFunction):
     improvement is, and does not rely on its own hyperparameters unlike the
     upper confidence bound.
     """
-    def evaluate(self, X):
+    def evaluate(self, X, integrate=True):
         """Implementation of abstract base class method."""
-        gamma, mean, sd = self.score(X)
-        ei = (mean - self.y_best) * norm.cdf(gamma) + sd * norm.pdf(gamma)
-        return ei
+        m, n = self.n_model, X.shape[0]
+        gammas, means, sds = self.score(X)
+        eis = np.zeros((m, n))
+        for i in range(m):
+            eis[i] = (
+                (means[i] - self.y_best) * norm.cdf(gammas[i]) +
+                sds[i] * norm.pdf(gammas[i])
+            )
+        if integrate:
+            return eis.mean(axis=0)
+        else:
+            return eis
 
     def grad_input(self, x):
         """Implementation of abstract base class method."""
-        gamma, mean, sd = self.score(x)
-        d_mean, d_sd = self.model.grad_input(x)
-        d_gamma = (d_mean - gamma * d_sd) / sd
-        grad = (gamma * norm.cdf(gamma) + norm.pdf(gamma)) * d_sd
-        grad += sd * norm.cdf(gamma) * d_gamma
-        return grad
+        m, k = self.n_model, x.shape[1]
+        gammas, means, sds = self.score(x)
+        grads = np.zeros((m, k))
+        for i, mod in enumerate(self.model):
+            d_mean, d_sd = mod.grad_input(x)
+            d_gamma = (d_mean - gammas[i] * d_sd) / sds[i]
+            grad = (gammas[i] * norm.cdf(gammas[i]) + norm.pdf(gammas[i])) * d_sd
+            grad += sds[i] * norm.cdf(gammas[i]) * d_gamma
+            grads[i] = grad
+        return grads.mean(axis=0)

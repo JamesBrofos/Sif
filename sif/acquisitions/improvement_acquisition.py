@@ -34,7 +34,7 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
         if y_best is not None:
             self.y_best = y_best
         else:
-            self.y_best = self.model.y.max()
+            self.y_best = self.model[0].y.max()
 
     def score(self, X):
         """Compute a z-score quantity for the prediction at a given input. This
@@ -53,11 +53,15 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
             A tuple containing the z-score, the mean of the metric at each
                 input, and the standard deviation of the mean at each input.
         """
-        # Compute the mean and standard deviation of the model's interpolant of
-        # the objective function.
-        mean, cov = self.model.predict(X)
-        sd = np.sqrt(np.diag(cov))
-        # Compute z-score-like quantity capturing the excess of the mean over
-        # the current best, adjusted for uncertainty in the measurement.
-        gamma = (mean - self.y_best) / sd
-        return gamma, mean, sd
+        m, n = self.n_model, X.shape[0]
+        means, sds, gammas = np.zeros((m, n)), np.zeros((m, n)), np.zeros((m, n))
+        for i, mod in enumerate(self.model):
+            # Compute the mean and standard deviation of the model's interpolant
+            # of the objective function.
+            means[i], cov = mod.predict(X)
+            sds[i] = np.sqrt(np.diag(cov))
+            # Compute z-score-like quantity capturing the excess of the mean
+            # over the current best, adjusted for uncertainty in the measurement.
+            gammas[i] = (means[i] - self.y_best) / sds[i]
+
+        return gammas, means, sds
