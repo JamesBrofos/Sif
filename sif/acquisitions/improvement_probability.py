@@ -27,7 +27,7 @@ class ImprovementProbability(ImprovementAcquisitionFunction):
         m, k = self.n_model, x.shape[1]
         gammas, means, sds = self.score(x)
         grads = np.zeros((m, k))
-        for i, mod in enumerate(self.model):
+        for i, mod in enumerate(self.models):
             d_mean, d_sd = mod.grad_input(x)
             d_gamma = (d_mean - gammas[i] * d_sd) / sds[i]
             grads[i] = norm.pdf(gammas[i]) * d_gamma

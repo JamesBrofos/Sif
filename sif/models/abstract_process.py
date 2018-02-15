@@ -5,10 +5,11 @@ from abc import abstractmethod, abstractproperty
 
 class AbstractProcess:
     """Abstract Process Class"""
-    def __init__(self, kernel, noise_level):
+    def __init__(self, kernel, noise_level, prior_mean):
         """Initialize the parameters of the abstract process class."""
         self.kernel = kernel
         self.noise_level = noise_level
+        self.prior_mean = prior_mean
 
     def fit(self, X, y):
         """Fit the parameters of the process based on the available bundles
@@ -16,13 +17,14 @@ class AbstractProcess:
         """
         # Store the training data (both the inputs and the targets).
         self.X, self.y = X, y.ravel()
+        self.y_tilde = self.y - self.prior_mean
         n = self.X.shape[0]
         # Compute the covariance matrix of the observed inputs.
         self.K = self.kernel.cov(self.X, self.X) + self.noise_level * np.eye(n)
         # For a numerically stable algorithm, we use Cholesky decomposition.
         self.L = spla.cholesky(self.K, lower=True)
-        self.alpha = spla.cho_solve((self.L, True), self.y)
-        self.beta = self.y.dot(self.alpha)
+        self.alpha = spla.cho_solve((self.L, True), self.y_tilde)
+        self.beta = self.y_tilde.dot(self.alpha)
 
     def predict(self, X_pred):
         """Leverage Bayesian posterior inference to compute the predicted mean
@@ -38,7 +40,7 @@ class AbstractProcess:
         v = spla.solve_triangular(self.L, K_cross.T, lower=True)
         # Posterior inference. Notice that we add a small amount of noise to the
         # diagonal for regulatization purposes.
-        mean = K_cross.dot(self.alpha)
+        mean = K_cross.dot(self.alpha) + self.prior_mean
         cov = K_pred - v.T.dot(v) + 1e-6 * np.eye(K_pred.shape[0])
         return mean, cov
 

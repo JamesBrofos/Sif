@@ -27,14 +27,14 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
             particular, taking the maximum of all values of the metric recorded
             for an experiment).
     """
-    def __init__(self, model, y_best=None):
+    def __init__(self, models, y_best=None):
         """Initialize parameters of the improvement-based acquisition function.
         """
-        super().__init__(model)
+        super().__init__(models)
         if y_best is not None:
             self.y_best = y_best
         else:
-            self.y_best = self.model[0].y.max()
+            self.y_best = self.models[0].y.max()
 
     def score(self, X):
         """Compute a z-score quantity for the prediction at a given input. This
@@ -55,7 +55,7 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
         """
         m, n = self.n_model, X.shape[0]
         means, sds, gammas = np.zeros((m, n)), np.zeros((m, n)), np.zeros((m, n))
-        for i, mod in enumerate(self.model):
+        for i, mod in enumerate(self.models):
             # Compute the mean and standard deviation of the model's interpolant
             # of the objective function.
             means[i], cov = mod.predict(X)

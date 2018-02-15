@@ -6,9 +6,9 @@ from ..samplers import multivariate_normal_sampler
 
 class GaussianProcess(AbstractProcess):
     """Gaussian Process Class"""
-    def __init__(self, kernel, noise_level=1.):
+    def __init__(self, kernel, noise_level=1., prior_mean=0.):
         """Initialize the parameters of the Gaussian process object."""
-        super().__init__(kernel, noise_level)
+        super().__init__(kernel, noise_level, prior_mean)
 
     def sample(self, X_pred, n_samples=1):
         """Implementation of abstract base class method."""

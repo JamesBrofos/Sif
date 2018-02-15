@@ -25,6 +25,25 @@ class AbstractKernel:
         self.amplitude = amplitude
 
     @abstractmethod
+    def sample_spectrum(self, n_bases):
+        """Draws samples from the spectrum of the kernel. Note that we must
+        return both the bias and the linear coefficients in order for these
+        features to remain fixed for further applications (e.g. for inference
+        with a test set).
+
+        Parameters:
+            n_bases (int): The number of samples (or Fourier bases) of the
+                spectrum to generate. The more bases are computed, the higher
+                the fidelity of the approximation; however, this makes using the
+                bases less useful since they will be slower.
+
+        Raises:
+            NotImplementedError: As an abstract method, all classes inheriting
+                from the abstract kernel class must implement this method.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def grad_input(self, x, Y):
         """Compute the gradient of the kernel with respect to the first input of
         the covariance function and essentially conditioned on the set of

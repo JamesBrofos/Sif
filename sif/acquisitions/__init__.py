@@ -1,2 +1,3 @@
 from .improvement_probability import ImprovementProbability
 from .expected_improvement import ExpectedImprovement
+from .thompson_sampling import ThompsonSampling

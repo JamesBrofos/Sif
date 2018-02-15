@@ -20,7 +20,7 @@ class AbstractAcquisitionFunction:
     necessary to perform multiple random restarts from different locations
     within the unit hypercube.
     """
-    def __init__(self, model):
+    def __init__(self, models):
         """Initialize the parameters of the abstract acquisition function
         object.
 
@@ -29,11 +29,11 @@ class AbstractAcquisitionFunction:
         wrap the input in brackets. By default the code should assume multiple
         models.
         """
-        if not isinstance(model, list):
-            self.model = [model]
+        if not isinstance(models, list):
+            self.models = [models]
         else:
-            self.model = model
-        self.n_model = len(self.model)
+            self.models = models
+        self.n_model = len(self.models)
 
     def __negative_acquisition_function(self, params):
         """This function simply computes the negative of the acquisition
@@ -84,7 +84,7 @@ class AbstractAcquisitionFunction:
                 function at the discovered maximum.
         """
         # Number of dimensions.
-        k = self.model[0].X.shape[1]
+        k = self.models[0].X.shape[1]
         x = sobol_seq.i4_sobol(k, index+1)[0]
         # Bounds on the search space used by the BFGS algorithm.
         bounds = [(0., 1.)] * k
@@ -106,7 +106,7 @@ class AbstractAcquisitionFunction:
         best_acq = -np.inf
         # Compute the number of evaluations to perform. As a heuristic, we use
         # ten times the number of hyperparameters.
-        n_evals = 10 * self.model[0].X.shape[1]
+        n_evals = 10 * self.models[0].X.shape[1]
         # For the specified number of iterations, try to maximize the
         # acquisition function using random search or randomly initialized
         # gradient ascent.

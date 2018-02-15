@@ -1,18 +1,30 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from .abstract_kernel import AbstractKernel
+from ..samplers import multivariate_student_t_sampler
 
 
 class MaternKernel(AbstractKernel):
     """Matern-5/2 Kernel Class"""
-    def cov(self, model_X, model_Y):
+    def cov(self, model_X, model_Y=None):
         # Compute the squared Euclidean distance between points.
+        if model_Y is None:
+            model_Y = model_X
         nX = model_X / self.length_scales
         nY = model_Y / self.length_scales
         dist_sq = cdist(nX, nY, "sqeuclidean")
         dist = np.sqrt(dist_sq)
         K = (1. + np.sqrt(5.)*dist + 5./3.*dist_sq) * np.exp(-np.sqrt(5.)*dist)
         return self.amplitude * K
+
+    def sample_spectrum(self, n_bases):
+        k = len(self.length_scales)
+        B = np.random.uniform(0., 2.*np.pi, size=(n_bases, ))
+        W = multivariate_student_t_sampler(
+            np.zeros((k, )), np.eye(k), 5,
+            n_samples=n_bases
+        ) / self.length_scales
+        return W, B
 
     def grad_input(self, x, Y):
         """Implementation of abstract base class method.
