@@ -1,4 +1,0 @@
-sif.egg-info/PKG-INFO
-sif.egg-info/SOURCES.txt
-sif.egg-info/dependency_links.txt
-sif.egg-info/top_level.txt
