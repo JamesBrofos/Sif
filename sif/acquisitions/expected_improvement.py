@@ -44,7 +44,9 @@ class ExpectedImprovement(ImprovementAcquisitionFunction):
         for i, mod in enumerate(self.models):
             d_mean, d_sd = mod.grad_input(x)
             d_gamma = (d_mean - gammas[i] * d_sd) / sds[i]
-            grad = (gammas[i] * norm.cdf(gammas[i]) + norm.pdf(gammas[i])) * d_sd
+            grad = (
+                gammas[i] * norm.cdf(gammas[i]) + norm.pdf(gammas[i])
+            ) * d_sd
             grad += sds[i] * norm.cdf(gammas[i]) * d_gamma
             grads[i] = grad
         return grads.mean(axis=0)

@@ -6,7 +6,7 @@ from ..samplers import multivariate_normal_sampler
 
 class GaussianProcess(AbstractProcess):
     """Gaussian Process Class"""
-    def __init__(self, kernel, noise_level=1., prior_mean=0.):
+    def __init__(self, kernel, noise_level=1e-6, prior_mean=0.):
         """Initialize the parameters of the Gaussian process object."""
         super().__init__(kernel, noise_level, prior_mean)
 

@@ -23,11 +23,6 @@ class AbstractAcquisitionFunction:
     def __init__(self, models):
         """Initialize the parameters of the abstract acquisition function
         object.
-
-        TODO: Can this be generalized to accept a list of models? We can ask if
-        the input is of type list in order to determine whether or not we need
-        wrap the input in brackets. By default the code should assume multiple
-        models.
         """
         if not isinstance(models, list):
             self.models = [models]
@@ -85,7 +80,8 @@ class AbstractAcquisitionFunction:
         """
         # Number of dimensions.
         k = self.models[0].X.shape[1]
-        x = sobol_seq.i4_sobol(k, index+1)[0]
+        # x = sobol_seq.i4_sobol(k, index+1)[0]
+        x = np.random.uniform(size=(k, ))
         # Bounds on the search space used by the BFGS algorithm.
         bounds = [(0., 1.)] * k
         # Call the BFGS algorithm to perform the maximization.
@@ -96,8 +92,7 @@ class AbstractAcquisitionFunction:
             bounds=bounds,
             disp=0
         )
-        x_max = np.atleast_2d(res[0])
-        return x_max.ravel(), self.evaluate(x_max)
+        return res
 
     def select(self):
         """Implementation of abstract base class method."""
@@ -111,16 +106,33 @@ class AbstractAcquisitionFunction:
         # acquisition function using random search or randomly initialized
         # gradient ascent.
         for i in range(n_evals):
-            x, val = self.__maximize(i)
+            res = self.__maximize(i)
+            val = -res[1][0]
             # When a better maximizer of the acquisition function is found, make
             # note of it.
             if val > best_acq:
-                x_best = x
+                best_x = res[0]
+                best_res = res
                 best_acq = val
+
+        # Now, if the gradient is too small, we'll proceed in a different manner
+        # by predicting at a large number of random locations.
+        #
+        # TODO: Does this make a difference?
+        diagnostics = best_res[2]
+        if diagnostics["nit"] == 0:
+            print("Failed to iterate. Performing random search.")
+            k = len(best_x)
+            X_cand = np.random.uniform(size=(1000 * k, k))
+            acq_cand = self.evaluate(X_cand).ravel()
+            max_idx = acq_cand.argmax()
+            print("Previous configuration: {}. Value: {}".format(best_x, best_acq))
+            best_x, best_acq = X_cand[max_idx], acq_cand[max_idx]
+            print("Search configuration: {}. Value: {}".format(best_x, best_acq))
 
         # Return the input that maximizes the acquisition function and the value
         # of the acquisition function at that point.
-        return x_best, best_acq
+        return best_x, best_acq
 
     @abstractmethod
     def evaluate(self, X, integrate=True):
