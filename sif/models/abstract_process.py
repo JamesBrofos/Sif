@@ -45,7 +45,7 @@ class AbstractProcess:
         return mean, cov
 
     @abstractmethod
-    def sample(self, X_pred, n_samples=1):
+    def sample(self, X_pred, n_samples=1, target_covariance=False):
         """Sample target variables from the predictive posterior distribution of
         the process.
         """

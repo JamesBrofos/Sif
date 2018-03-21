@@ -1,4 +1,5 @@
 from .gaussian_process import GaussianProcess
+from .heteroscedastic_gaussian_process import HeteroscedasticGaussianProcess
 from .gaussian_process_classifier import GaussianProcessClassifier
 from .student_t_process import StudentTProcess
 from .bayesian_linear_regression import BayesianLinearRegression

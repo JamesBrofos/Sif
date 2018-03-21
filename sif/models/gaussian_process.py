@@ -10,10 +10,12 @@ class GaussianProcess(AbstractProcess):
         """Initialize the parameters of the Gaussian process object."""
         super().__init__(kernel, noise_level, prior_mean)
 
-    def sample(self, X_pred, n_samples=1):
+    def sample(self, X_pred, n_samples=1, target_covariance=False):
         """Implementation of abstract base class method."""
         # Bundles hopes sampling algorithm gets better soon <3
         mean, cov = self.predict(X_pred)
+        if target_covariance:
+            cov += self.noise_level * np.eye(X_pred.shape[0])
         return multivariate_normal_sampler(mean, cov, n_samples)
 
     def grad_input(self, x):

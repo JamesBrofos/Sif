@@ -11,11 +11,13 @@ class StudentTProcess(AbstractProcess):
         super().__init__(kernel, noise_level)
         self.nu = nu
 
-    def sample(self, X_pred, n_samples=1):
+    def sample(self, X_pred, n_samples=1, target_covariance=False):
         """Implementation of abstract base class method."""
         n = self.X.shape[0]
         eta = self.nu + n
         mean, cov = self.predict(X_pred)
+        if target_covariance:
+            cov += self.noise_level * np.eye(X_pred.shape[0])
         return multivariate_student_t_sampler(mean, cov, eta, n_samples)
 
     def predict(self, X_pred):
