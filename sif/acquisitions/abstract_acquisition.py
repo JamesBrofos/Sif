@@ -117,8 +117,6 @@ class AbstractAcquisitionFunction:
 
         # Now, if the gradient is too small, we'll proceed in a different manner
         # by predicting at a large number of random locations.
-        #
-        # TODO: Does this make a difference?
         diagnostics = best_res[2]
         if diagnostics["nit"] == 0:
             print("Failed to iterate. Performing random search.")

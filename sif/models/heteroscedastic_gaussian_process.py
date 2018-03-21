@@ -33,14 +33,32 @@ class HeteroscedasticGaussianProcess:
             tol=0.01
     ):
         """Initialize the parameters of the heteroscedastic Gaussian process."""
+        # Kernels for the two constituent Gaussian processes.
         self.mean_kernel = mean_kernel
         self.noise_kernel = noise_kernel
         self.mean_level = mean_level
         self.noise_level = noise_level
+        # Convergence parameters for the fitting procedure.
         self.max_iter = max_iter
         self.tol = tol
 
     def fit(self, X, y):
+        """This procedure fits the components of a heteroscedastic Gaussian
+        process. This specifically entails fitting two Gaussian processes, the
+        first of which will predict the expected value of the targets given the
+        input, as usual. The second Gaussian process predicts the noise variance
+        of the target at a given input. The variance is computed by assuming
+        that both the targets and the posterior samples of the first Gaussian
+        process are drawn from the same generating process. This enables us to
+        average their values and divide by two in order to obtain an unbiased
+        estimate of the noise variance.
+
+        This procedure continues in an EM-like fashion, continually updating
+        either the expectation Gaussian process or the noise Gaussian process
+        until a convergence condition is met. This means that either the
+        log-likelihood is no longer increasing by an appreciable amount or the
+        maximum number of EM-like iterations has been met.
+        """
         # Fit the Gaussian process that models expectations.
         self.mean_gp = GaussianProcess(
             self.mean_kernel, noise_level=self.mean_level, prior_mean=y.mean()
