@@ -96,6 +96,8 @@ class AbstractAcquisitionFunction:
 
     def select(self):
         """Implementation of abstract base class method."""
+        # Number of dimensions.
+        k = self.models[0].X.shape[1]
         # Initialize the best acquisition value to negative infinity. This will
         # allow any fit of the data to be better.
         best_acq = -np.inf
@@ -120,13 +122,12 @@ class AbstractAcquisitionFunction:
         diagnostics = best_res[2]
         if diagnostics["nit"] == 0:
             print("Failed to iterate. Performing random search.")
-            k = len(best_x)
             X_cand = np.random.uniform(size=(1000 * k, k))
             acq_cand = self.evaluate(X_cand).ravel()
             max_idx = acq_cand.argmax()
-            print("Previous configuration: {}. Value: {}".format(best_x, best_acq))
+            print("Previous configuration: {}. Value: {:.10f}.".format(best_x, best_acq))
             best_x, best_acq = X_cand[max_idx], acq_cand[max_idx]
-            print("Search configuration: {}. Value: {}".format(best_x, best_acq))
+            print("Search configuration: {}. Value: {:.10f}.".format(best_x, best_acq))
 
         # Return the input that maximizes the acquisition function and the value
         # of the acquisition function at that point.
