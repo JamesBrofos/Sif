@@ -26,18 +26,17 @@ class UpperConfidenceBound(AbstractAcquisitionFunction):
             ninety-five percent credible interval under the probabilistic
             model's posterior.
     """
-    def __init__(self, model, kappa=2.):
+    def __init__(self, models, kappa=2.):
         """Initialize parameters of the upper confidence bound acquisition
         function object.
         """
-        super(UpperConfidenceBound, self).__init__(model)
+        super(UpperConfidenceBound, self).__init__(models)
         self.kappa = kappa
 
     def evaluate(self, X):
         """Implementation of abstract base class method."""
-        mean, cov = self.model.predict(X)
-        sd = np.sqrt(np.diag(cov))
-        return mean + self.kappa * sd
+        mean, var = self.model.predict(X, diagonal=True)
+        return mean + self.kappa * np.sqrt(var)
 
     def grad_input(self, x):
         """Implementation of abstract base class method."""

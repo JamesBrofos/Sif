@@ -7,6 +7,7 @@ from ..samplers import multivariate_student_t_sampler
 class MaternKernel(AbstractKernel):
     """Matern-5/2 Kernel Class"""
     def cov(self, model_X, model_Y=None):
+        """Implementation of abstract base class method."""
         # Compute the squared Euclidean distance between points.
         if model_Y is None:
             model_Y = model_X
@@ -16,15 +17,6 @@ class MaternKernel(AbstractKernel):
         dist = np.sqrt(dist_sq)
         K = (1. + np.sqrt(5.)*dist + 5./3.*dist_sq) * np.exp(-np.sqrt(5.)*dist)
         return self.amplitude * K
-
-    def sample_spectrum(self, n_bases):
-        k = len(self.length_scales)
-        B = np.random.uniform(0., 2.*np.pi, size=(n_bases, ))
-        W = multivariate_student_t_sampler(
-            np.zeros((k, )), np.eye(k), 5,
-            n_samples=n_bases
-        ) / self.length_scales
-        return W, B
 
     def grad_input(self, x, Y):
         """Implementation of abstract base class method.
@@ -111,3 +103,14 @@ class MaternKernel(AbstractKernel):
         g = np.expand_dims(g, axis=1)
         g_grad = -g * f1_grad
         return f * g_grad + g * f_grad
+
+    def sample_spectrum(self, n_bases):
+        """Implementation of abstract base class method."""
+        k = len(self.length_scales)
+        B = np.random.uniform(0., 2.*np.pi, size=(n_bases, ))
+        W = multivariate_student_t_sampler(
+            np.zeros((k, )), np.eye(k), 5,
+            n_samples=n_bases
+        ) / self.length_scales
+        return W, B
+

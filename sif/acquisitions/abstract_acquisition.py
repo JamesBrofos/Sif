@@ -1,3 +1,4 @@
+import multiprocessing
 import numpy as np
 import sobol_seq
 from abc import abstractmethod
@@ -23,6 +24,11 @@ class AbstractAcquisitionFunction:
     def __init__(self, models):
         """Initialize the parameters of the abstract acquisition function
         object.
+
+        Parameters:
+            models (AbstractProcess): A list of Gaussian process models that
+                interpolates the observed data. Each element of the list should
+                correspond to a different configuration of kernel hyperparameters.
         """
         if not isinstance(models, list):
             self.models = [models]
@@ -59,17 +65,16 @@ class AbstractAcquisitionFunction:
         """
         return -self.grad_input(np.atleast_2d(params))
 
-    def __maximize(self, index):
+    def maximize(self, x_cand):
         """Helper function that leverages the BFGS algorithm with a bounded
         input space in order to converge the maximum of the acquisition function
         using gradient ascent. Notice that this function returns the point in
         the original input space, not the point in the unit hypercube.
 
         Parameters:
-            index (int): An integer that keeps track of the index in the Sobol
-                sequence at which to generate a pseudo-random configuration of
-                inputs in the unit hypercube. This is done in order to exploit
-                the optimally uniform properties of the Sobol sequence.
+            x_cand (numpy array): An array indicating the starting position for
+                the BFGS optimization routine. This allows us to identify the
+                highest point of the acquisition function.
 
         Returns:
             A tuple containing first the numpy array representing the input in
@@ -80,14 +85,12 @@ class AbstractAcquisitionFunction:
         """
         # Number of dimensions.
         k = self.models[0].X.shape[1]
-        # x = sobol_seq.i4_sobol(k, index+1)[0]
-        x = np.random.uniform(size=(k, ))
         # Bounds on the search space used by the BFGS algorithm.
         bounds = [(0., 1.)] * k
         # Call the BFGS algorithm to perform the maximization.
         res = fmin_l_bfgs_b(
             self.__negative_acquisition_function,
-            x,
+            x_cand,
             fprime=self.__negative_acquisition_function_grad,
             bounds=bounds,
             disp=0
@@ -98,36 +101,37 @@ class AbstractAcquisitionFunction:
         """Implementation of abstract base class method."""
         # Number of dimensions.
         k = self.models[0].X.shape[1]
+        # Compute the number of evaluations to perform. As a heuristic, we use
+        # ten times the number of hyperparameters.
+        n_evals = 10 * k
+
+        # Create random points in the vicinity of the optimal input. This is for
+        # exploitation purposes.
+        x_opt = self.models[0].X[self.models[0].y.argmax()]
+        X_exp = np.clip(np.random.normal(scale=1e-3, size=(50 * k, k)) + x_opt, 0., 1.)
+        # Create a large grid of points on which to evaluate the acquisition
+        # function. By only computing the diagonal elements, this computation is
+        # relatively fast.
+        X_grid = np.vstack((np.random.uniform(size=(10000 * k, k)), X_exp))
+        acq_grid = self.evaluate(X_grid).ravel()
+        idx_grid = np.argsort(acq_grid)[-n_evals:]
+        X_cand = X_grid[idx_grid]
+
         # Initialize the best acquisition value to negative infinity. This will
         # allow any fit of the data to be better.
         best_acq = -np.inf
-        # Compute the number of evaluations to perform. As a heuristic, we use
-        # ten times the number of hyperparameters.
-        n_evals = 10 * self.models[0].X.shape[1]
         # For the specified number of iterations, try to maximize the
         # acquisition function using random search or randomly initialized
         # gradient ascent.
-        for i in range(n_evals):
-            res = self.__maximize(i)
-            val = -res[1][0]
-            # When a better maximizer of the acquisition function is found, make
-            # note of it.
-            if val > best_acq:
-                best_x = res[0]
-                best_res = res
-                best_acq = val
-
-        # Now, if the gradient is too small, we'll proceed in a different manner
-        # by predicting at a large number of random locations.
-        diagnostics = best_res[2]
-        if diagnostics["nit"] == 0:
-            print("Failed to iterate. Performing random search.")
-            X_cand = np.random.uniform(size=(1000 * k, k))
-            acq_cand = self.evaluate(X_cand).ravel()
-            max_idx = acq_cand.argmax()
-            print("Previous configuration: {}. Value: {:.10f}.".format(best_x, best_acq))
-            best_x, best_acq = X_cand[max_idx], acq_cand[max_idx]
-            print("Search configuration: {}. Value: {:.10f}.".format(best_x, best_acq))
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        results = [pool.apply_async(self.maximize, args=(X_cand[i], )) for i in range(n_evals)]
+        best_res = max(results, key=lambda res: -res.get()[1][0]).get()
+        best_x, best_acq = best_res[0], -best_res[1][0]
+        pool.close()
+        print(
+            "Best acquisition function before optimization: {:.4f}. "
+            "After optimization: {:.4f}.".format(acq_grid.max(), best_acq)
+        )
 
         # Return the input that maximizes the acquisition function and the value
         # of the acquisition function at that point.

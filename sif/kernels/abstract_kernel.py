@@ -24,6 +24,28 @@ class AbstractKernel:
         self.length_scales = length_scales
         self.amplitude = amplitude
 
+    def var(self, model_X):
+        """This method computes only the variance (not the full covariance
+        matrix) of the input. This is easy to compute because most kernels have
+        diagonal entries of one (without multiplying by the amplitude of the
+        kernel). This method is equivalent to computing
+
+        >>> np.diag(kernel.cov(model_X))
+
+        That is, the diagonal of the full covariance matrix.
+        """
+        return self.amplitude * np.ones((model_X.shape[0], ))
+
+    @abstractmethod
+    def cov(self, model_X, model_Y=None):
+        """This method computes the kernel matrix between every row of the first
+        input and every other row of the second input. If the second input is
+        not provided, then this is just the covariance matrix of the first
+        input. Otherwise it is the cross-covariance. Either way, this is the
+        full covariance matrix and not just the diagonal.
+        """
+        raise NotImplementedError()
+
     @abstractmethod
     def sample_spectrum(self, n_bases):
         """Draws samples from the spectrum of the kernel. Note that we must

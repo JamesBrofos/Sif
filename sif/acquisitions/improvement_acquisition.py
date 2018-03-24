@@ -19,8 +19,9 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
     metric and the extent of uncertainty about that prediction.
 
     Parameters:
-        model (AbstractProcess): A Gaussian process model that interpolates the
-            observed data.
+        models (AbstractProcess): A list of Gaussian process models that
+            interpolates the observed data. Each element of the list should
+            correspond to a different configuration of kernel hyperparameters.
         y_best (float): The best seen value of the metric observed so far. This
             is an optional parameter, and if it is not specified by the user
             then it will be computed directly from Thor's database (in
@@ -58,8 +59,8 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
         for i, mod in enumerate(self.models):
             # Compute the mean and standard deviation of the model's interpolant
             # of the objective function.
-            means[i], cov = mod.predict(X)
-            sds[i] = np.sqrt(np.diag(cov))
+            means[i], var = mod.predict(X, diagonal=True)
+            sds[i] = np.sqrt(var)
             # Compute z-score-like quantity capturing the excess of the mean
             # over the current best, adjusted for uncertainty in the measurement.
             gammas[i] = (means[i] - self.y_best) / sds[i]

@@ -6,6 +6,7 @@ from .abstract_kernel import AbstractKernel
 class SquaredExponentialKernel(AbstractKernel):
     """Squared Exponential Kernel Class"""
     def cov(self, model_X, model_Y=None):
+        """Implementation of abstract base class method."""
         # Compute the squared Euclidean distance between points.
         if model_Y is None:
             model_Y = model_X
@@ -22,6 +23,7 @@ class SquaredExponentialKernel(AbstractKernel):
         return grad
 
     def sample_spectrum(self, n_bases):
+        """Implementation of abstract base class method."""
         k = len(self.length_scales)
         B = np.random.uniform(0., 2.*np.pi, size=(n_bases, ))
         W = np.random.normal(size=(n_bases, k)) / self.length_scales
