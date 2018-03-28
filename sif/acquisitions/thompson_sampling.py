@@ -6,13 +6,17 @@ from ..models import BayesianLinearRegression
 
 class ThompsonSampling(AbstractAcquisitionFunction):
     """Thompson Sampling Acquisition Function Class"""
-    def __init__(self, model, n_bases):
+    def __init__(self, models, n_bases):
         """Initialize the parameters of the Thompson sampling acquisition
         function object.
-        Bundles
         """
-        super().__init__(model)
+        # Call the initialization method of the base class and set the number of
+        # random Fourier features we'd like to assemble.
+        super().__init__(models)
         self.n_bases = n_bases
+
+        # Assume a prior mean of zeros and a wide diagonal covariance matrix.
+        #This permits very flexible random Fourier feature interpolations.
         prior_w, prior_cov = np.zeros((self.n_bases, )), np.eye(self.n_bases) * 100.
         # Create a list of Bayesian linear regression objects.
         self.W, self.B, self.lrs, self.coef = [], [], [], []
@@ -49,7 +53,5 @@ class ThompsonSampling(AbstractAcquisitionFunction):
         grads = np.zeros((m, k))
         for i, mod in enumerate(self.lrs):
             S = -np.sin(x.dot(self.W[i].T) + self.B[i]).ravel()
-            grads[i] = (
-                np.sqrt(2. / self.n_bases) * S * self.W[i].T
-            ).dot(self.coef[i])
+            grads[i] = (np.sqrt(2. / self.n_bases) * S * self.W[i].T).dot(self.coef[i])
         return grads.mean(axis=0)

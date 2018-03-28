@@ -21,12 +21,12 @@ class UpperConfidenceBound(AbstractAcquisitionFunction):
             functions preference for exploration as opposed to exploitation. A
             higher value will place more value on exploring regions of high
             uncertainty, whereas a value of zero is equivalent to pure
-            exploitation. The default value of two corresponds to the
+            exploitation. The default value of nearly two corresponds to the
             acquisition function approximating the upper limit of the
             ninety-five percent credible interval under the probabilistic
             model's posterior.
     """
-    def __init__(self, models, kappa=2.):
+    def __init__(self, models, kappa=1.96):
         """Initialize parameters of the upper confidence bound acquisition
         function object.
         """
