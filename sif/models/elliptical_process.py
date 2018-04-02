@@ -1,20 +1,20 @@
 import numpy as np
 import scipy.linalg as spla
 from abc import abstractmethod, abstractproperty
+from .abstract_model import AbstractModel
 
 
-class AbstractProcess:
-    """Abstract Process Class"""
-    def __init__(self, kernel, noise_level, prior_mean):
+class EllipticalProcess(AbstractModel):
+    """Elliptical Process Class"""
+    def __init__(self, kernel, noise_level=1e-6, prior_mean=0.):
         """Initialize the parameters of the abstract process class."""
+        super().__init__()
         self.kernel = kernel
         self.noise_level = noise_level
         self.prior_mean = prior_mean
 
     def fit(self, X, y):
-        """Fit the parameters of the process based on the available bundles
-        training data.
-        """
+        """Implementation of abstract base class method."""
         # Store the training data (both the inputs and the targets).
         self.X, self.y = X, y.ravel()
         self.y_tilde = self.y - self.prior_mean
@@ -27,11 +27,7 @@ class AbstractProcess:
         self.beta = self.y_tilde.dot(self.alpha)
 
     def predict(self, X_pred, diagonal=False):
-        """Leverage Bayesian posterior inference to compute the predicted mean
-        and variance of a given set of inputs given the available training data.
-        Notice that it is necessary to first fit the process model before
-        posterior inference can be performed.
-        """
+        """Implementation of abstract base class method."""
         # Compute the cross covariance between training and the requested
         # inference locations. Also compute the covariance matrix of the
         # observed inputs and the covariance at the inference locations.
@@ -48,16 +44,9 @@ class AbstractProcess:
             cov = K_pred - v.T.dot(v) + 1e-6 * np.eye(K_pred.shape[0])
         return mean, cov
 
-    @abstractmethod
-    def sample(self, X_pred, n_samples=1, target_covariance=False):
-        """Sample target variables from the predictive posterior distribution of
-        the process.
-        """
-        raise NotImplementedError()
-
     @abstractproperty
     def log_likelihood(self):
-        """Compute the log-likelihood of the data under the Gaussian process
+        """Compute the log-likelihood of the data under the elliptical process
         model with the given hyperparameters of the kernel.
         """
         raise NotImplementedError()

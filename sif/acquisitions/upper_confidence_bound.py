@@ -33,12 +33,24 @@ class UpperConfidenceBound(AbstractAcquisitionFunction):
         super(UpperConfidenceBound, self).__init__(models)
         self.kappa = kappa
 
-    def evaluate(self, X):
+    # These implementations are not correct.
+
+    def evaluate(self, X, integrate=True):
         """Implementation of abstract base class method."""
-        mean, var = self.model.predict(X, diagonal=True)
-        return mean + self.kappa * np.sqrt(var)
+        ucb = np.zeros((self.n_models, X.shape[0]))
+        for i, mod in enumerate(self.models):
+            mean, var = mod.predict(X, diagonal=True)
+            ucb[i] = mean + self.kappa * np.sqrt(var)
+        if integrate:
+            return ucb.mean(axis=0)
+        else:
+            return ucb
 
     def grad_input(self, x):
         """Implementation of abstract base class method."""
-        d_mean, d_sd = self.model.grad_input(x)
-        return d_mean + self.kappa * d_sd
+        k = x.shape[1]
+        grads = np.zeros((self.n_models, k))
+        for i, mod in enumerate(self.models):
+            d_mean, d_sd = self.model.grad_input(x)
+            grads[i] = d_mean + self.kappa * d_sd
+        return grads.mean(axis=0)

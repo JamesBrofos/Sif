@@ -17,13 +17,13 @@ class ThompsonSampling(AbstractAcquisitionFunction):
 
         # Assume a prior mean of zeros and a wide diagonal covariance matrix.
         #This permits very flexible random Fourier feature interpolations.
-        prior_w, prior_cov = np.zeros((self.n_bases, )), np.eye(self.n_bases) * 100.
+        l2_reg = 1. / 100
         # Create a list of Bayesian linear regression objects.
         self.W, self.B, self.lrs, self.coef = [], [], [], []
         for i, mod in enumerate(self.models):
             W, B = mod.kernel.sample_spectrum(self.n_bases)
             P = compute_kernel_fourier_features(mod.X, W, B)
-            m = BayesianLinearRegression(prior_w, prior_cov)
+            m = BayesianLinearRegression(l2_reg)
             m.fit(P, mod.y)
             self.lrs.append(m)
             self.W.append(W)
@@ -32,7 +32,7 @@ class ThompsonSampling(AbstractAcquisitionFunction):
 
     def evaluate(self, X, integrate=True):
         """Implementation of abstract base class method."""
-        m, n = self.n_model, X.shape[0]
+        m, n = self.n_models, X.shape[0]
         f = np.zeros((m, n))
         for i, mod in enumerate(self.lrs):
             P = compute_kernel_fourier_features(X, self.W[i], self.B[i])
@@ -49,7 +49,7 @@ class ThompsonSampling(AbstractAcquisitionFunction):
         # The random Fourier features have to produce a D-vector.
         # The coefficients for the random Fourier features must also be a
         # D-vector.
-        m, k = self.n_model, x.shape[1]
+        m, k = self.n_models, x.shape[1]
         grads = np.zeros((m, k))
         for i, mod in enumerate(self.lrs):
             S = -np.sin(x.dot(self.W[i].T) + self.B[i]).ravel()

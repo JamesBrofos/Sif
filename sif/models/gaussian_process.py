@@ -1,20 +1,16 @@
 import numpy as np
 import scipy.linalg as spla
-from .abstract_process import AbstractProcess
+from .elliptical_process import EllipticalProcess
 from ..samplers import multivariate_normal_sampler
 
 
-class GaussianProcess(AbstractProcess):
+class GaussianProcess(EllipticalProcess):
     """Gaussian Process Class"""
-    def __init__(self, kernel, noise_level=1e-6, prior_mean=0.):
-        """Initialize the parameters of the Gaussian process object."""
-        super().__init__(kernel, noise_level, prior_mean)
-
-    def sample(self, X_pred, n_samples=1, target_covariance=False):
+    def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
         # Bundles hopes sampling algorithm gets better soon <3
         mean, cov = self.predict(X_pred)
-        if target_covariance:
+        if target:
             cov += self.noise_level * np.eye(X_pred.shape[0])
         return multivariate_normal_sampler(mean, cov, n_samples)
 

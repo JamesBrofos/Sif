@@ -34,7 +34,7 @@ class AbstractAcquisitionFunction:
             self.models = [models]
         else:
             self.models = models
-        self.n_model = len(self.models)
+        self.n_models = len(self.models)
 
     def __negative_acquisition_function(self, params):
         """This function simply computes the negative of the acquisition

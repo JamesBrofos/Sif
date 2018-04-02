@@ -1,15 +1,11 @@
 import numpy as np
 import scipy.linalg as spla
+from .abstract_model import AbstractModel
+from .bayesian_logistic_regression import sigmoid
+from ..samplers import multivariate_normal_sampler
 
 
-def sigmoid(z):
-    """Computes the sigmoid activation of the input. This function squashes the
-    entire real line to the interval between zero and one, exclusive.
-    """
-    return 1. / (1. + np.exp(-z))
-
-
-class GaussianProcessClassifier:
+class GaussianProcessClassifier(AbstractModel):
     """Gaussian Process Classifier Class"""
     def __init__(self, kernel, tol=1e-10):
         """Initialize the parameters of the Gaussian process classifier object.
@@ -55,29 +51,35 @@ class GaussianProcessClassifier:
                     prev_obj = obj
             n_iters += 1
 
-    def predict(self, X_pred):
-        """Posterior class prediction using a Gaussian process classifier. In
-        this case, we compute the average activation of a sigmoid according to a
-        Laplace approximation of the true posterior.
-        """
-        return self.sample(X_pred, 1000).mean(axis=0)
+    def predict(self, X_pred, diagonal=False):
+        """Implementation of abstract base class method."""
+        # We generate a large number of samples in order to obtain low variance
+        # estimates of the mean and variance.
+        S = self.sample(X_pred, 10000)
+        mean = S.mean(axis=0)
+        if diagonal:
+            cov = S.var(axis=0)
+        else:
+            cov = np.cov(S.T)
+        return mean, cov
 
-    def sample(self, X_pred, n_samples=1):
+    def sample(self, X_pred, n_samples=1, target=False):
+        """Implementation of abstract base class method."""
         # Compute the cross covariance between training and the requested
         # inference locations. Also compute the covariance matrix of the
         # observed inputs and the covariance at the inference locations.
         K_pred = self.kernel.cov(X_pred, X_pred)
         K_cross = self.kernel.cov(X_pred, self.X)
-        v = spla.solve_triangular(
-            self.L, np.sqrt(self.W).dot(K_cross.T), lower=True
-        )
+        v = spla.solve_triangular(self.L, np.sqrt(self.W).dot(K_cross.T), lower=True)
         # Compute the mean and covariance of the Laplace approximation.
         norm_mean = K_cross.dot(self.__grad_log_prob_y_given_f(self.y, self.f))
         norm_cov = K_pred - v.T.dot(v) + 1e-6 * np.eye(K_pred.shape[0])
-        norm_L = spla.cholesky(norm_cov)
-        n_pred = X_pred.shape[0]
-        rvs = np.random.normal(size=(n_samples, n_pred)).dot(norm_L) + norm_mean
-        return sigmoid(rvs)
+        rvs = multivariate_normal_sampler(norm_mean, norm_cov, n_samples)
+        p = sigmoid(rvs)
+        if target:
+            return (np.random.uniform(size=p.shape) < p).astype(float)
+        else:
+            return p
 
     @property
     def log_likelihood(self):

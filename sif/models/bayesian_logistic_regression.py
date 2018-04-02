@@ -1,5 +1,8 @@
 import numpy as np
 import scipy.linalg as spla
+import scipy.sparse as spsp
+from .generalized_linear_model import GeneralizedLinearModel
+from ..samplers import multivariate_normal_sampler
 
 
 def sigmoid(z):
@@ -8,8 +11,12 @@ def sigmoid(z):
     """
     return 1. / (1. + np.exp(-z))
 
+def sigmoid_derivative(z):
+    """Derivative of the sigmoid function with respect to its input."""
+    p = sigmoid(z)
+    return p * (1. - p)
 
-class BayesianLogisticRegression:
+class BayesianLogisticRegression(GeneralizedLinearModel):
     """Bayesian Logistic Regression Model Class
 
     This module implements a Bayesian logistic regression model. This class
@@ -18,15 +25,15 @@ class BayesianLogisticRegression:
     in order to efficiently converge to the maximum a posteriori estimate
     (which is coincidentally used as the mean of the Laplace approximation).
     """
-    def __init__(self, tol=1e-5, max_iter=1000, l2_reg=0.):
+    def __init__(self, l2_reg=0., tol=1e-5, max_iter=100):
         """Initialize the parameters of the Bayesian logistic regression object.
         """
+        super().__init__(l2_reg)
         self.tol = tol
         self.max_iter = max_iter
-        self.l2_reg = l2_reg
 
     def fit(self, X, y):
-        """Fit the parameters of the Bayesian logistic regression model."""
+        """Implementation of abstract base class method."""
         # Initialize vector of linear coefficients. Notice that we add a bias
         # term ourselves.
         self.X, self.y = np.hstack((np.ones((X.shape[0], 1)), X)), y
@@ -53,20 +60,33 @@ class BayesianLogisticRegression:
                 v = self.__objective
                 print("Iteration: {}. Objective value: {:.4f}".format(i+1, v))
 
-    def predict(self, X):
-        """Predict class membership for the provided input. This is achieved
-        via Monte Carlo integration over the link function for a specific
-        univariate normal using the Laplace approximation.
-        """
-        n = X.shape[0]
-        X = np.hstack((np.ones((n, 1)), X))
-        mu = X.dot(self.beta)
-        sigma_sq = np.array([x.dot(self.cov.dot(x)) for x in X])
-        V = np.zeros((n, ))
-        for i in range(n):
-            A = np.random.normal(mu[i], sigma_sq[i], size=(10000, ))
-            V[i] = sigmoid(A).mean()
-        return V
+    def sample(self, X_pred, n_samples=1, target=False):
+        """Implementation of abstract base class method."""
+        rvs = multivariate_normal_sampler(X_pred.dot(self.beta), self.cov)
+        p = sigmoid(rvs)
+        if target:
+            return (np.random.uniform(size=p.shape) < p).astype(float)
+        else:
+            return p
+
+    def predict(self, X_pred, diagonal=False):
+        """Implementation of abstract base class method."""
+        # Note that we use the Delta Method to obtain the variance.
+        #
+        # TODO: Check that this produces sane results.
+        z = X_pred.dot(self.beta)
+        mean = sigmoid(z)
+        D = sigmoid_derivative(z) * X_pred.T
+        B = self.cov.dot(D)
+        if diagonal:
+            cov = np.sum(D * B.T, axis=0)
+        else:
+            cov = D.T.dot(B)
+        return mean, cov
+
+    def sample_parameters(n_samples=1):
+        """Implementation of abstract base class method."""
+        return multivariate_normal_sampler(self.beta, self.cov, n_samples)
 
     @property
     def __objective(self):
@@ -83,7 +103,7 @@ class BayesianLogisticRegression:
     @property
     def __hessian(self):
         p = sigmoid(self.X.dot(self.beta))
-        D = np.diag(p * (1. - p))
+        D = spsp.diags(p * (1. - p))
         return self.X.T.dot(D.dot(self.X)) + self.l2_reg * np.eye(self.beta.shape[0])
 
 

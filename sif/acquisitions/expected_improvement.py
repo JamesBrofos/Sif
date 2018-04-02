@@ -23,7 +23,7 @@ class ExpectedImprovement(ImprovementAcquisitionFunction):
     """
     def evaluate(self, X, integrate=True):
         """Implementation of abstract base class method."""
-        m, n = self.n_model, X.shape[0]
+        m, n = self.n_models, X.shape[0]
         gammas, means, sds = self.score(X)
         eis = np.zeros((m, n))
         for i in range(m):
@@ -38,7 +38,7 @@ class ExpectedImprovement(ImprovementAcquisitionFunction):
 
     def grad_input(self, x):
         """Implementation of abstract base class method."""
-        m, k = self.n_model, x.shape[1]
+        m, k = self.n_models, x.shape[1]
         gammas, means, sds = self.score(x)
         grads = np.zeros((m, k))
         for i, mod in enumerate(self.models):

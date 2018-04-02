@@ -24,7 +24,7 @@ class ImprovementProbability(ImprovementAcquisitionFunction):
 
     def grad_input(self, x):
         """Implementation of abstract base class method."""
-        m, k = self.n_model, x.shape[1]
+        m, k = self.n_models, x.shape[1]
         gammas, means, sds = self.score(x)
         grads = np.zeros((m, k))
         for i, mod in enumerate(self.models):
