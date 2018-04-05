@@ -54,7 +54,7 @@ class ImprovementAcquisitionFunction(AbstractAcquisitionFunction):
             A tuple containing the z-score, the mean of the metric at each
                 input, and the standard deviation of the mean at each input.
         """
-        m, n = self.n_model, X.shape[0]
+        m, n = self.n_models, X.shape[0]
         means, sds, gammas = np.zeros((m, n)), np.zeros((m, n)), np.zeros((m, n))
         for i, mod in enumerate(self.models):
             # Compute the mean and standard deviation of the model's interpolant
