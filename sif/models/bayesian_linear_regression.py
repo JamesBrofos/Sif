@@ -68,3 +68,12 @@ class BayesianLinearRegression(GeneralizedLinearModel):
         for i in range(n_samples):
             W[i] = multivariate_normal_sampler(self.post_w, sigma_sq[i] * self.post_V)
         return W, sigma_sq
+
+    def grad_input(self, x):
+        """Compute the gradient of the mean function and the standard deviation
+        function at the provided input.
+        """
+        d_V = self.post_V.dot(x)
+        V = x.dot(d_V)
+        d_sd = 1. / (2. * np.sqrt(V)) * d_V
+        return self.post_w, d_sd
