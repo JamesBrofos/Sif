@@ -31,6 +31,7 @@ class EllipticalProcess(AbstractModel):
         # Compute the cross covariance between training and the requested
         # inference locations. Also compute the covariance matrix of the
         # observed inputs and the covariance at the inference locations.
+        X_pred = np.atleast_2d(X_pred)
         K_cross = self.kernel.cov(X_pred, self.X)
         v = spla.solve_triangular(self.L, K_cross.T, lower=True)
         # Posterior inference. Notice that we add a small amount of noise to the

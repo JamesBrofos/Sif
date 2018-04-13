@@ -62,6 +62,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
 
     def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
+        X_pred = np.atleast_2d(X_pred)
         rvs = multivariate_normal_sampler(X_pred.dot(self.beta), self.cov)
         p = sigmoid(rvs)
         if target:
@@ -74,6 +75,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
         # Note that we use the Delta Method to obtain the variance.
         #
         # TODO: Check that this produces sane results.
+        X_pred = np.atleast_2d(X_pred)
         z = X_pred.dot(self.beta)
         mean = sigmoid(z)
         D = sigmoid_derivative(z) * X_pred.T

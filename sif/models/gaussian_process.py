@@ -9,6 +9,7 @@ class GaussianProcess(EllipticalProcess):
     def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
         # Bundles hopes sampling algorithm gets better soon <3
+        X_pred = np.atleast_2d(X_pred)
         mean, cov = self.predict(X_pred)
         if target:
             cov += self.noise_level * np.eye(X_pred.shape[0])

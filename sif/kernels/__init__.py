@@ -1,3 +1,3 @@
 from .squared_exponential_kernel import SquaredExponentialKernel
 from .matern_kernel import MaternKernel
-from .kernel_fourier_features import compute_kernel_fourier_features
+from .random_fourier_features import rff, grad_rff
