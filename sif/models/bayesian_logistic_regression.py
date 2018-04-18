@@ -51,14 +51,17 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
             if np.any(np.isnan(self.beta)):
                 raise ValueError("NaNs encountered in linear coefficients.")
 
+            # Print diagnostics.
+            v = self.__objective
+            print("Iteration: {}. Objective value: {:.4f}".format(i+1, v))
             # Check for convergence.
             if np.linalg.norm(delta) < self.tol:
-                L_inv = spla.solve_triangular(L, np.eye(self.X.shape[1]), lower=True)
-                self.cov = L_inv.T.dot(L_inv)
                 break
-            else:
-                v = self.__objective
-                print("Iteration: {}. Objective value: {:.4f}".format(i+1, v))
+
+        # Create covariance matrix for the linear coefficients under a Laplace
+        # approximation.
+        L_inv = spla.solve_triangular(L, np.eye(self.X.shape[1]), lower=True)
+        self.cov = L_inv.T.dot(L_inv)
 
     def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
