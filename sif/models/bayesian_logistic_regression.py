@@ -16,6 +16,9 @@ def sigmoid_derivative(z):
     p = sigmoid(z)
     return p * (1. - p)
 
+def add_bias(X):
+    return np.hstack((np.ones((X.shape[0], 1)), np.atleast_2d(X)))
+
 class BayesianLogisticRegression(GeneralizedLinearModel):
     """Bayesian Logistic Regression Model Class
 
@@ -36,7 +39,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
         """Implementation of abstract base class method."""
         # Initialize vector of linear coefficients. Notice that we add a bias
         # term ourselves.
-        self.X, self.y = np.hstack((np.ones((X.shape[0], 1)), X)), y
+        self.X, self.y = add_bias(X), y
         self.beta = np.zeros((self.X.shape[1], ))
         # Iterate until convergence.
         for i in range(self.max_iter):
@@ -65,7 +68,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
 
     def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
-        X_pred = np.atleast_2d(X_pred)
+        X_pred = add_bias(X_pred)
         rvs = multivariate_normal_sampler(X_pred.dot(self.beta), self.cov)
         p = sigmoid(rvs)
         if target:
@@ -78,7 +81,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
         # Note that we use the Delta Method to obtain the variance.
         #
         # TODO: Check that this produces sane results.
-        X_pred = np.atleast_2d(X_pred)
+        X_pred = add_bias(X_pred)
         z = X_pred.dot(self.beta)
         mean = sigmoid(z)
         D = sigmoid_derivative(z) * X_pred.T
