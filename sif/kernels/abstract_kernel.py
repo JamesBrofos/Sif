@@ -21,7 +21,7 @@ class AbstractKernel:
         """Initialize the parameters of the squared exponential kernel object.
         """
         # Define a variable for the length scales and amplitude.
-        self.length_scales = length_scales
+        self.length_scales = np.asarray(length_scales)
         self.amplitude = amplitude
 
     def var(self, model_X):

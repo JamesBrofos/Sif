@@ -39,7 +39,7 @@ class EllipticalProcess(AbstractModel):
         mean = K_cross.dot(self.alpha) + self.prior_mean
         if diagonal:
             K_pred = self.kernel.var(X_pred)
-            cov = K_pred - np.sum(v ** 2, axis=0) + 1e-6
+            cov = K_pred - np.sum(v**2, axis=0) + 1e-6
         else:
             K_pred = self.kernel.cov(X_pred, X_pred)
             cov = K_pred - v.T.dot(v) + 1e-6 * np.eye(K_pred.shape[0])

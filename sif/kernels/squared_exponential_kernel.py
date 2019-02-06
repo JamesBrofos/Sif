@@ -28,3 +28,4 @@ class SquaredExponentialKernel(AbstractKernel):
         B = np.random.uniform(0., 2.*np.pi, size=(n_bases, ))
         W = np.random.normal(size=(n_bases, k)) / self.length_scales
         return W, B
+
