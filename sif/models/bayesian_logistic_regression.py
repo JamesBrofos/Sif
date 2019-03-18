@@ -2,19 +2,9 @@ import numpy as np
 import scipy.linalg as spla
 import scipy.sparse as spsp
 from .generalized_linear_model import GeneralizedLinearModel
+from .sigmoid import sigmoid, sigmoid_derivative
 from ..samplers import multivariate_normal_sampler
 
-
-def sigmoid(z):
-    """The sigmoid is a squashing function that compresses the entire real line
-    into the unit interval.
-    """
-    return 1. / (1. + np.exp(-z))
-
-def sigmoid_derivative(z):
-    """Derivative of the sigmoid function with respect to its input."""
-    p = sigmoid(z)
-    return p * (1. - p)
 
 def add_bias(X):
     return np.hstack((np.ones((X.shape[0], 1)), np.atleast_2d(X)))
@@ -28,18 +18,20 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
     in order to efficiently converge to the maximum a posteriori estimate
     (which is coincidentally used as the mean of the Laplace approximation).
     """
-    def __init__(self, l2_reg=0., tol=1e-5, max_iter=100):
+    def __init__(self, l2_reg=0., tol=1e-5, max_iter=100, verbose=True):
         """Initialize the parameters of the Bayesian logistic regression object.
         """
         super().__init__(l2_reg)
         self.tol = tol
         self.max_iter = max_iter
+        self.verbose = verbose
 
-    def fit(self, X, y):
+    def fit(self, X, y, use_bias=True):
         """Implementation of abstract base class method."""
         # Initialize vector of linear coefficients. Notice that we add a bias
         # term ourselves.
-        self.X, self.y = add_bias(X), y
+        self.X = add_bias(X) if use_bias else X
+        self.y = y
         self.beta = np.zeros((self.X.shape[1], ))
         # Iterate until convergence.
         for i in range(self.max_iter):
@@ -56,7 +48,8 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
 
             # Print diagnostics.
             v = self.__objective
-            print("Iteration: {}. Objective value: {:.4f}".format(i+1, v))
+            if self.verbose:
+                print("Iteration: {}. Objective value: {:.4f}".format(i+1, v))
             # Check for convergence.
             if np.linalg.norm(delta) < self.tol:
                 break
@@ -92,7 +85,7 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
             cov = D.T.dot(B)
         return mean, cov
 
-    def sample_parameters(n_samples=1):
+    def sample_parameters(self, n_samples=1):
         """Implementation of abstract base class method."""
         return multivariate_normal_sampler(self.beta, self.cov, n_samples)
 
