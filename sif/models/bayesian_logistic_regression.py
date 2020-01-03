@@ -62,7 +62,9 @@ class BayesianLogisticRegression(GeneralizedLinearModel):
     def sample(self, X_pred, n_samples=1, target=False):
         """Implementation of abstract base class method."""
         X_pred = add_bias(X_pred)
-        rvs = multivariate_normal_sampler(X_pred.dot(self.beta), self.cov)
+        rvs = multivariate_normal_sampler(X_pred.dot(self.beta),
+                                          X_pred.dot(self.cov).dot(X_pred.T),
+                                          n_samples)
         p = sigmoid(rvs)
         if target:
             return (np.random.uniform(size=p.shape) < p).astype(float)
